@@ -1,0 +1,36 @@
+import yfinance as yf
+import pandas as pd
+
+def fetch_market_data(symbol="EURUSD=X", interval="1h", period="90d"):
+    try:
+        data = yf.download(
+            symbol,
+            period=period,
+            interval=interval,
+            auto_adjust=True,
+            progress=False,
+            threads=False
+        )
+
+        if data is None or data.empty:
+            return None
+
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.get_level_values(0)
+
+        required = ["Open", "High", "Low", "Close", "Volume"]
+        data = data[[c for c in required if c in data.columns]].copy()
+
+        for column in required:
+            if column in data.columns:
+                data[column] = data[column].astype(float)
+
+        data = data.dropna(
+            subset=["Open", "High", "Low", "Close"]
+        )
+
+        return data
+
+    except Exception as error:
+        print(f"Market data error: {error}")
+        return None
